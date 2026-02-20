@@ -4,8 +4,6 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 
 
-
-
 ApplicationWindow {
     id: root
     visible: true
@@ -32,15 +30,36 @@ ApplicationWindow {
         }
     }
 
-    Component.onCompleted: {
-        // Connect to the event hooks
-        eventHook.mouseEvent.connect(function(event) {
-            logArea.append("Mouse Event: " + event.type + " at (" + event.x + ", " + event.y + ")");
-        });
+    // 2 Buttons to start/stop the event hook  and play events
+    RowLayout {
+        Layout.alignment: Qt.AlignHCenter
+        spacing: 20
+        Button {
+            text: qsTr("Start Hook")
+            onClicked: {
+                EventAppEngine.startHooking();
+                console.log("Event hook started.");
+            }
+        }
+        Button {
+            text: qsTr("Stop Hook")
+            onClicked: {
+                EventAppEngine.stopHooking();
+                console.log("Event hook stopped.");
+            }
+        }
 
-        eventHook.keyboardEvent.connect(function(event) {
-            logArea.append("Keyboard Event: " + event.type + " key: " + event.key);
-        });
+        Button {
+            text: qsTr("Play Recorded Events")
+            onClicked: {
+                EventAppEngine.playRecordedEvents();
+                console.log("Playing recorded events.");
+            }
+        }
+    }
+    Connections {
+        target: EventAppEngine
+
     }
 
 }
