@@ -22,7 +22,9 @@ public:
     Q_INVOKABLE void stopHooking();
     Q_INVOKABLE void clearRecordedEvents();
     Q_INVOKABLE void playRecordedEvents();
-    Q_INVOKABLE void stopPlaying();
+    Q_INVOKABLE void clearEvents();
+    Q_INVOKABLE void setLoopPlayback(bool loop);
+    Q_INVOKABLE void stopPlayback();
 
 
 private:

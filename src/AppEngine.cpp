@@ -32,6 +32,17 @@ void AppEngine::playRecordedEvents() {
         eventHandler->playRecordedEvents();
 }
 
-void AppEngine::stopPlaying() {
+void AppEngine::clearEvents() {
+        eventHandler->clearRecordedEvents();
 
 }
+
+void AppEngine::setLoopPlayback(bool loop) {
+        eventHandler->setLoopPlayback(loop);
+}
+
+void AppEngine::stopPlayback() {
+        eventHandler->stopPlayback();
+}
+
+

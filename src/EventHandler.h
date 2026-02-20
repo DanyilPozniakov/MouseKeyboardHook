@@ -7,12 +7,14 @@
 
 #include <QObject>
 #include <QKeyEvent>
+#include <QMouseEvent>
 #include <QElapsedTimer>
 
 struct RecordedEvent {
     qint64 timestamp;
     QEvent::Type type;
     QPoint pos;
+    QPoint globalPos;
     Qt::MouseButton button;
     int key;
     Qt::KeyboardModifiers modifiers;
@@ -23,8 +25,8 @@ struct RecordedEvent {
           key(keyEvent->key()), modifiers(keyEvent->modifiers()), text(keyEvent->text()) {}
 
     RecordedEvent(qint64 time , QMouseEvent* mouseEvent)
-        : timestamp(time), type(mouseEvent->type()), pos(mouseEvent->localPos().toPoint()),
-          button(mouseEvent->button()), key(0), modifiers(mouseEvent->modifiers()) {}
+        : timestamp(time), type(mouseEvent->type()), pos(mouseEvent->position().toPoint()),
+          globalPos(mouseEvent->globalPosition().toPoint()), button(mouseEvent->button()), key(0), modifiers(mouseEvent->modifiers()) {}
 
 
     [[nodiscard]] QKeyEvent* toKeyEvent() const {
@@ -32,7 +34,9 @@ struct RecordedEvent {
     }
 
     [[nodiscard]] QMouseEvent* toMouseEvent() const {
-        return new QMouseEvent(type, pos, pos, pos, button, Qt::NoButton, modifiers);
+        QPointF pf = QPointF(pos);
+        Qt::MouseButtons buttons = Qt::MouseButtons(button);
+        return new QMouseEvent(type, pf, pf, pf, button, buttons, modifiers);
     }
 
 };
@@ -54,12 +58,16 @@ public:
     void playRecordedEvents();
 
     void clearRecordedEvents();
+    void setLoopPlayback(bool loop);
+    void stopPlayback();
 
 
 private:
     int playbackIndex = 0;
+    bool loopPlayback = false;
     QElapsedTimer timer;
-    std::atomic<bool> isHooking{false};
+    bool isHooking{false};
+    bool isStopped{false};
 
     QVector<RecordedEvent> recordedEvents;
 };

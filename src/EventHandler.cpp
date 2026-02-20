@@ -32,7 +32,7 @@ bool EventHandler::eventFilter(QObject *obj, QEvent *event) {
         QKeyEvent *key_event = static_cast<QKeyEvent *>(event); // Safe already
         auto ev = RecordedEvent(elapsed, key_event);
         recordedEvents.push_back(ev);
-        qDebug() << "Recorded mouse event";
+        qDebug() << "Recorded keyboard event";
 
         return QObject::eventFilter(obj, event);
     }
@@ -57,31 +57,66 @@ void EventHandler::stopHooking() {
 }
 
 void EventHandler::playRecordedEvents() {
-    auto eventsToPlay = recordedEvents[playbackIndex];
-    QObject *receiver = QGuiApplication::focusWindow();
-    if (!receiver) return;
-
-
-    if (eventsToPlay.type == QEvent::KeyPress || eventsToPlay.type == QEvent::KeyRelease) {
-        auto keyEvent = eventsToPlay.toKeyEvent();
-        QApplication::postEvent(receiver, keyEvent);
-    } else if (eventsToPlay.type == QEvent::MouseButtonPress ||
-               eventsToPlay.type == QEvent::MouseButtonRelease ||
-               eventsToPlay.type == QEvent::MouseMove) {
-        QCursor::setPos(QApplication::activeWindow()->mapToGlobal(eventsToPlay.pos));
-
-        auto mouseEvent = eventsToPlay.toMouseEvent();
-        QApplication::postEvent(receiver, mouseEvent);
+    if (recordedEvents.isEmpty() || playbackIndex >= recordedEvents.size()) {
+        playbackIndex = 0;
+        return;
+    }
+    if (isStopped) { //
+        isStopped = false;
+        return;
     }
 
-        playbackIndex++;
-        if (playbackIndex >= recordedEvents.size()) {
-            playbackIndex = 0;
-        }
+    qDebug() << "Start playing" << recordedEvents.size() << "index:" << playbackIndex;
+    if (auto *window = QGuiApplication::focusWindow()) {
+        auto &eventData = recordedEvents[playbackIndex];
 
-    QTimer::singleShot(100, this, &EventHandler::playRecordedEvents);
+        if (eventData.type == QEvent::KeyPress || eventData.type == QEvent::KeyRelease) {
+            QApplication::postEvent(window, eventData.toKeyEvent());
+        } else {
+            QPoint gPos = window->mapToGlobal(eventData.pos);
+            QCursor::setPos(gPos);
+            QMouseEvent *mouseEvent = new QMouseEvent(
+                eventData.type,
+                eventData.pos,
+                eventData.pos,
+                gPos,
+                eventData.button,
+                eventData.button,
+                eventData.modifiers
+            );
+            QApplication::postEvent(window, mouseEvent);
+        }
+    }
+
+    int nextIndex = playbackIndex + 1;
+    qint64 delay = 10;
+    qDebug() << "Playing event" << playbackIndex << "with delay" << delay;
+    if (nextIndex < recordedEvents.size())
+    {
+        delay = recordedEvents[nextIndex].timestamp - recordedEvents[playbackIndex].timestamp;
+        playbackIndex = nextIndex;
+        QTimer::singleShot(delay, this, &EventHandler::playRecordedEvents);
+    }
+    else
+    {
+        playbackIndex = 0;
+        delay = recordedEvents[playbackIndex + 1].timestamp - recordedEvents[playbackIndex].timestamp;
+        if (loopPlayback) {
+            QTimer::singleShot(delay, this, &EventHandler::playRecordedEvents);
+        }
+        qDebug() << "Finish playback";
+    }
 }
 
 void EventHandler::clearRecordedEvents() {
         recordedEvents.clear();
+}
+
+void EventHandler::setLoopPlayback(bool loop) {
+    loopPlayback = loop;
+}
+
+void EventHandler::stopPlayback() {
+    playbackIndex = 0;
+    isStopped = true;
 }
