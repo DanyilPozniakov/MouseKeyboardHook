@@ -7,6 +7,7 @@
 
 #include <EventHandler.h>
 
+struct RecordedEvent;
 
 class AppEngine : public QObject
 {

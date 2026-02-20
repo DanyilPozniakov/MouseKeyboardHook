@@ -7,7 +7,12 @@
 #include <QMouseEvent>
 #include <QDebug>
 #include <QApplication>
-
+#include <QQuickWindow>
+#include <QWidget>
+#include <QWindow>
+#include <QCursor>
+#include <QPoint>
+#include <QTimer>
 #include "EventHandler.h"
 
 #include <bits/this_thread_sleep.h>
@@ -22,25 +27,20 @@ bool EventHandler::eventFilter(QObject *obj, QEvent *event) {
     if (!isHooking) {
         return QObject::eventFilter(obj, event);
     }
-
+    auto elapsed = timer.elapsed();
     if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
         QKeyEvent *key_event = static_cast<QKeyEvent *>(event); // Safe already
-        auto ev = QSharedPointer<QKeyEvent>::create(event->type(), key_event->key(),
-                                                    key_event->modifiers(), key_event->text(),
-                                                    key_event->isAutoRepeat(), key_event->count());
+        auto ev = RecordedEvent(elapsed, key_event);
         recordedEvents.push_back(ev);
-        qDebug() << "Recorded key event: " << ev->key() << " with modifiers: " << ev->modifiers();
+        qDebug() << "Recorded mouse event";
 
         return QObject::eventFilter(obj, event);
     }
     if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
         QMouseEvent *mouse_event = static_cast<QMouseEvent *>(event);
-        auto ev = QSharedPointer<QMouseEvent>::create(event->type(), mouse_event->localPos(),
-                                                    mouse_event->windowPos(), mouse_event->screenPos(),
-                                                    mouse_event->button(), mouse_event->buttons(),
-                                                    mouse_event->modifiers());
+        auto ev = RecordedEvent(elapsed, mouse_event);
         recordedEvents.push_back(ev);
-        qDebug() << "Recorded mouse event: " << ev->button() << " at position: " << ev->localPos();
+        qDebug() << "Recorded mouse event";
         return QObject::eventFilter(obj, event);
     }
 
@@ -48,19 +48,38 @@ bool EventHandler::eventFilter(QObject *obj, QEvent *event) {
 }
 
 void EventHandler::startHooking() {
-        isHooking = true;
+    timer.restart();
+    isHooking = true;
 }
 
 void EventHandler::stopHooking() {
-        isHooking = false;
+    isHooking = false;
 }
 
 void EventHandler::playRecordedEvents() {
-        for (const auto& event : recordedEvents) {
-            QCoreApplication::postEvent(QApplication::instance(), event.data());
-            std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Adjust the delay as needed
+    auto eventsToPlay = recordedEvents[playbackIndex];
+    QObject *receiver = QGuiApplication::focusWindow();
+    if (!receiver) return;
 
+
+    if (eventsToPlay.type == QEvent::KeyPress || eventsToPlay.type == QEvent::KeyRelease) {
+        auto keyEvent = eventsToPlay.toKeyEvent();
+        QApplication::postEvent(receiver, keyEvent);
+    } else if (eventsToPlay.type == QEvent::MouseButtonPress ||
+               eventsToPlay.type == QEvent::MouseButtonRelease ||
+               eventsToPlay.type == QEvent::MouseMove) {
+        QCursor::setPos(QApplication::activeWindow()->mapToGlobal(eventsToPlay.pos));
+
+        auto mouseEvent = eventsToPlay.toMouseEvent();
+        QApplication::postEvent(receiver, mouseEvent);
+    }
+
+        playbackIndex++;
+        if (playbackIndex >= recordedEvents.size()) {
+            playbackIndex = 0;
         }
+
+    QTimer::singleShot(100, this, &EventHandler::playRecordedEvents);
 }
 
 void EventHandler::clearRecordedEvents() {

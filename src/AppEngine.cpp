@@ -5,7 +5,7 @@
 #include "AppEngine.h"
 
 AppEngine::AppEngine() {
-        eventHandler = QSharedPointer<EventHandler>::create();
+        eventHandler = QSharedPointer<EventHandler>(new EventHandler(this));
 
 }
 
