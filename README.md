@@ -1,8 +1,10 @@
-# MouseKeyboardHook
+# MouseKeyboardHook — Quick Start
 
 A tiny app that records and plays back mouse and keyboard events and includes a simple numeric keypad UI.
 
-Quick start:
+Quick start
+1. Install system dependency (Arch):
+   sudo pacman -S xcb-util-cursor
 
 Usage
 
