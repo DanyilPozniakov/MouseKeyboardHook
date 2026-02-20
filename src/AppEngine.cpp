@@ -29,6 +29,7 @@ void AppEngine::clearRecordedEvents() {
 }
 
 void AppEngine::playRecordedEvents() {
+        eventHandler->readEventsFromJson();
         eventHandler->playRecordedEvents();
 }
 

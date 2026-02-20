@@ -13,9 +13,16 @@
 #include <QCursor>
 #include <QPoint>
 #include <QTimer>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QFile>
+
 #include "EventHandler.h"
 
 #include <bits/this_thread_sleep.h>
+
+#define SCRIPT_FILE_PATH "recorded_events.json"
 
 
 EventHandler::EventHandler(QObject *parent) {
@@ -54,6 +61,7 @@ void EventHandler::startHooking() {
 
 void EventHandler::stopHooking() {
     isHooking = false;
+    saveEventsToJson();
 }
 
 void EventHandler::playRecordedEvents() {
@@ -119,4 +127,68 @@ void EventHandler::setLoopPlayback(bool loop) {
 void EventHandler::stopPlayback() {
     playbackIndex = 0;
     isStopped = true;
+}
+
+void EventHandler::saveEventsToJson() {
+        QJsonArray jsonArray;
+        for (const auto& event : recordedEvents) {
+            QJsonObject jsonEvent;
+            jsonEvent["timestamp"] = event.timestamp;
+            jsonEvent["type"] = event.type;
+            jsonEvent["pos"] = QString("%1,%2").arg(event.pos.x()).arg(event.pos.y());
+            jsonEvent["globalPos"] = QString("%1,%2").arg(event.globalPos.x()).arg(event.globalPos.y());
+            jsonEvent["button"] = static_cast<int>(event.button);
+            jsonEvent["key"] = event.key;
+            jsonEvent["modifiers"] = static_cast<int>(event.modifiers);
+            jsonEvent["text"] = event.text;
+            jsonArray.append(jsonEvent);
+        }
+
+        QJsonDocument doc(jsonArray);
+        QFile file(SCRIPT_FILE_PATH);
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(doc.toJson());
+            file.close();
+        } else {
+            qDebug() << "Failed to save events to JSON";
+        }
+
+}
+
+void EventHandler::readEventsFromJson() {
+    QFile file(SCRIPT_FILE_PATH);
+    if (file.open(QIODevice::ReadOnly)) {
+        QByteArray data = file.readAll();
+        file.close();
+
+        QJsonDocument doc = QJsonDocument::fromJson(data);
+        if (doc.isArray()) {
+            QJsonArray jsonArray = doc.array();
+            recordedEvents.clear();
+            for (const auto& jsonEvent : jsonArray) {
+                if (jsonEvent.isObject()) {
+                    QJsonObject obj = jsonEvent.toObject();
+                    auto timestamp = obj["timestamp"].toVariant().toLongLong();
+                    auto type = static_cast<QEvent::Type>(obj["type"].toInt());
+                    auto posStr = obj["pos"].toString();
+                    auto globalPosStr = obj["globalPos"].toString();
+                    auto button = static_cast<Qt::MouseButton>(obj["button"].toInt());
+                    auto key = obj["key"].toInt();
+                    auto modifiers = static_cast<Qt::KeyboardModifiers>(obj["modifiers"].toInt());
+                    auto text = obj["text"].toString();
+                    QPoint pos, globalPos;
+                    sscanf(posStr.toStdString().c_str(), "%d,%d", &pos.rx(), &pos.ry());
+                    sscanf(globalPosStr.toStdString().c_str(), "%d,%d", &globalPos.rx(), &globalPos.ry());
+                    RecordedEvent event(timestamp, type, pos, globalPos, button, key, modifiers, text);
+                    recordedEvents.push_back(event);
+                }
+            }
+        } else {
+            qDebug() << "Invalid JSON format";
+        }
+    } else {
+        qDebug() << "Failed to read events from JSON";
+    }
+
+
 }

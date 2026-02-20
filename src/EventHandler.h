@@ -20,6 +20,11 @@ struct RecordedEvent {
     Qt::KeyboardModifiers modifiers;
     QString text;
 
+    RecordedEvent(qint64 time, QEvent::Type eventType, const QPoint& position, const QPoint& globalPosition,
+                  Qt::MouseButton mouseButton, int keyCode, Qt::KeyboardModifiers keyModifiers, const QString& keyText)
+        : timestamp(time), type(eventType), pos(position), globalPos(globalPosition),
+          button(mouseButton), key(keyCode), modifiers(keyModifiers), text(keyText) {}
+
     RecordedEvent(qint64 time, QKeyEvent* keyEvent)
         : timestamp(time), type(keyEvent->type()), pos(), button(Qt::NoButton),
           key(keyEvent->key()), modifiers(keyEvent->modifiers()), text(keyEvent->text()) {}
@@ -61,6 +66,9 @@ public:
     void setLoopPlayback(bool loop);
     void stopPlayback();
 
+    // text script
+    void saveEventsToJson();
+    void readEventsFromJson();
 
 private:
     int playbackIndex = 0;
@@ -68,6 +76,8 @@ private:
     QElapsedTimer timer;
     bool isHooking{false};
     bool isStopped{false};
+
+
 
     QVector<RecordedEvent> recordedEvents;
 };
