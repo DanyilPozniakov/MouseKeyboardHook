@@ -21,6 +21,7 @@ public:
     Q_INVOKABLE void stopHooking();
     Q_INVOKABLE void clearRecordedEvents();
     Q_INVOKABLE void playRecordedEvents();
+    Q_INVOKABLE void stopPlaying();
 
 
 private:

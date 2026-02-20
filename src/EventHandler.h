@@ -19,6 +19,7 @@ public:
 
     void startHooking();
     void stopHooking();
+    void playRecordedEvents();
 
     void clearRecordedEvents();
 

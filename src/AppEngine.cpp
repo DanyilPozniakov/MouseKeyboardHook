@@ -17,15 +17,21 @@ QSharedPointer<EventHandler> AppEngine::getEventHandler() const {
 }
 
 void AppEngine::startHooking() {
-
+        eventHandler->startHooking();
 }
 
-
 void AppEngine::stopHooking() {
+        eventHandler->stopHooking();
 }
 
 void AppEngine::clearRecordedEvents() {
+        eventHandler->clearRecordedEvents();
 }
 
 void AppEngine::playRecordedEvents() {
+        eventHandler->playRecordedEvents();
+}
+
+void AppEngine::stopPlaying() {
+
 }

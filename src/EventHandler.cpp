@@ -6,12 +6,15 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QDebug>
+#include <QApplication>
 
 #include "EventHandler.h"
 
-EventHandler::EventHandler(QObject *parent): QObject(parent)
-{
-    isHooking  = false;
+#include <bits/this_thread_sleep.h>
+
+
+EventHandler::EventHandler(QObject *parent) {
+    isHooking = false;
 }
 
 bool EventHandler::eventFilter(QObject *obj, QEvent *event) {
@@ -50,6 +53,14 @@ void EventHandler::startHooking() {
 
 void EventHandler::stopHooking() {
         isHooking = false;
+}
+
+void EventHandler::playRecordedEvents() {
+        for (const auto& event : recordedEvents) {
+            QCoreApplication::postEvent(QApplication::instance(), event.data());
+            std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Adjust the delay as needed
+
+        }
 }
 
 void EventHandler::clearRecordedEvents() {
