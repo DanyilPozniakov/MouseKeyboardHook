@@ -36,7 +36,7 @@ bool EventHandler::eventFilter(QObject *obj, QEvent *event) {
     }
     auto elapsed = timer.elapsed();
     if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
-        QKeyEvent *key_event = static_cast<QKeyEvent *>(event); // Safe already
+        QKeyEvent *key_event = static_cast<QKeyEvent *>(event);
         auto ev = RecordedEvent(elapsed, key_event);
         recordedEvents.push_back(ev);
         qDebug() << "Recorded keyboard event";
@@ -82,7 +82,6 @@ void EventHandler::playRecordedEvents() {
             QApplication::postEvent(window, eventData.toKeyEvent());
         } else {
             QPoint gPos = window->mapToGlobal(eventData.pos);
-            QCursor::setPos(gPos);
             QMouseEvent *mouseEvent = new QMouseEvent(
                 eventData.type,
                 eventData.pos,
