@@ -16,7 +16,7 @@ public:
     AppEngine();
     ~AppEngine();
 
-    QSharedPointer<EventHandler> getEventHandler() const;
+    EventHandler *getEventHandler() const;
 
     Q_INVOKABLE void startHooking();
     Q_INVOKABLE void stopHooking();
@@ -28,7 +28,7 @@ public:
 
 
 private:
-    QSharedPointer<EventHandler> eventHandler;
+    EventHandler *eventHandler;
 };
 
 

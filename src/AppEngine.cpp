@@ -5,14 +5,14 @@
 #include "AppEngine.h"
 
 AppEngine::AppEngine() {
-        eventHandler = QSharedPointer<EventHandler>(new EventHandler(this));
+        eventHandler = new EventHandler(this);
 
 }
 
 AppEngine::~AppEngine() {
 }
 
-QSharedPointer<EventHandler> AppEngine::getEventHandler() const {
+EventHandler* AppEngine::getEventHandler() const {
         return eventHandler;
 }
 
